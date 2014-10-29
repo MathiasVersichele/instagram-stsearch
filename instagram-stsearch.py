@@ -55,6 +55,14 @@ t_min_list = [t_min if x<t_min else x for x in t_min_list]
 print t_max_list
 print t_min_list
 
+print (args.lat_min + args.lat_max)/2
+print 'hey', change_in_longitude((args.lat_min + args.lat_max)/2, (args.r/1000)*circle_packing)
+
+dy_degrees = args.r / 111111.0
+dx_degrees = args.r / (math.cos(math.radians((args.lat_min + args.lat_max)/2)) * 111111)
+#(111111 * math.cos((args.lat_min + args.lat_max)/2)) / args.r
+print dx_degrees, dy_degrees
+
 lon_list = np.arange(args.lon_min, args.lon_max, change_in_longitude((args.lat_min + args.lat_max)/2, (args.r/1000)*circle_packing))
 lat_list = np.arange(args.lat_min, args.lat_max, change_in_latitude((args.r/1000)*circle_packing))
 print lon_list
