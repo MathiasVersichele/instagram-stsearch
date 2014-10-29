@@ -6,6 +6,8 @@ from dateutil import parser
 import numpy as np
 import urllib2
 import json
+import simplekml
+from polycircles import polycircles
 
 helpstring = 'usage: instagram-stsearch.py -h(elp) -t <access-token> -b <bbox min-lon,max-lon,min-lat,max-lat> -s <start timestamp in human readable format> -e <end timestamp in human readable format> -o <outputfile> [-r <radius of search circles, default 5000m>]'
 
@@ -19,11 +21,12 @@ argparser.add_argument("t_min", help="minimum timestamp", type=str)
 argparser.add_argument("t_max", help="maximum timestamp", type=str)
 argparser.add_argument("output", help="output location", type=str)
 argparser.add_argument("-r", help="search radius (default 5000m)", type=int, default=5000)
+argparser.add_argument("-k", help="show search circles in specified kml file", action="store_true")
 args = argparser.parse_args()	
 
 ## static vars
 ig_max_time_span = 5
-circle_packing = 1.9
+circle_packing = 1.4
 ##
 
 ## slightly adapted from http://www.johndcook.com/blog/2009/04/27/converting-miles-to-degrees-longitude-or-latitude/
@@ -47,33 +50,29 @@ def change_in_longitude(latitude, kms):
 t_min = parser.parse(args.t_min)
 t_max = parser.parse(args.t_max)
 days = (t_max - t_min).days
-print days
 
 t_max_list = [t_max - datetime.timedelta(days=x*ig_max_time_span) for x in range(0, (days/ig_max_time_span) + 1)]
 t_min_list = [t_max - datetime.timedelta(days=x*ig_max_time_span) for x in range(1, (days/ig_max_time_span) + 2)]
 t_min_list = [t_min if x<t_min else x for x in t_min_list]
-print t_max_list
-print t_min_list
-
-print (args.lat_min + args.lat_max)/2
-print 'hey', change_in_longitude((args.lat_min + args.lat_max)/2, (args.r/1000)*circle_packing)
-
-dy_degrees = args.r / 111111.0
-dx_degrees = args.r / (math.cos(math.radians((args.lat_min + args.lat_max)/2)) * 111111)
-#(111111 * math.cos((args.lat_min + args.lat_max)/2)) / args.r
-print dx_degrees, dy_degrees
 
 lon_list = np.arange(args.lon_min, args.lon_max, change_in_longitude((args.lat_min + args.lat_max)/2, (args.r/1000)*circle_packing))
 lat_list = np.arange(args.lat_min, args.lat_max, change_in_latitude((args.r/1000)*circle_packing))
-print lon_list
-print lat_list
+
+if args.k:
+	kml = simplekml.Kml()
+	for lon in lon_list:
+		for lat in lat_list:
+			polycircle = polycircles.Polycircle(latitude=lat, longitude=lon, radius=args.r, number_of_vertices=36)
+			pol = kml.newpolygon(name="", outerboundaryis=polycircle.to_kml())
+			pol.style.polystyle.color = simplekml.Color.changealphaint(200, simplekml.Color.green)
+	kml.save("instagram-stsearch.kml")
 
 print len(lon_list)*len(lat_list)*len(t_max_list), "calls in total without counting recursive calls"
 
 ok = raw_input("proceed ? enter y(es) or n(o):   ")
 print ok
 if ok in ('y', 'Y'):
-	f = open(output, "a")
+	f = open(args.output, "a")
 	f.write('created;type;link;user_id;photo_id;lon;lat\n')
 	for i in range(0, len(t_max_list)):
 		t1 = t_min_list[i]
@@ -90,7 +89,7 @@ if ok in ('y', 'Y'):
 				t2_rec = t2_unix
 				while True:
 					print t1, t2, lon, lat
-					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + ig_access_token + '&distance=' + str(r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
+					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + args.ig_access_token + '&distance=' + str(args.r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
 					print url
 					response = urllib2.urlopen(url)
 					data = json.load(response)
