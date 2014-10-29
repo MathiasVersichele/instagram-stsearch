@@ -11,10 +11,10 @@ ig_access_token = "1542801014.eb99df3.19a156f1345f400eb35d1f4b26d90345"
 
 lon_min = 2.5
 lon_max = 3.4
-lat_min = 51.05
+lat_min = 50.70
 lat_max = 51.35
 r_meters = 5000
-t_min = "10/01/2014 00:00:00 +0000" # or anything else dateutil.parser can handle
+t_min = "01/01/2014 00:00:00 +0000" # or anything else dateutil.parser can handle
 t_max = "10/28/2014 00:00:00 +0000"
 output = "instagram_data.csv"
 ##
@@ -64,6 +64,7 @@ ok = raw_input("proceed ? enter y(es) or n(o):   ")
 print ok
 if ok in ('y', 'Y'):
 	f = open(output, "a")
+	f.write('created;type;link;user_id;photo_id;lon;lat\n')
 	for i in range(0, len(t_max_list)):
 		t1 = t_min_list[i]
 		t2 = t_max_list[i]
@@ -86,11 +87,13 @@ if ok in ('y', 'Y'):
 					print len(data['data'])
 					for photo in range(0, len(data['data'])):
 						created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
+						type = data['data'][photo]['type']
+						link = data['data'][photo]['link']
 						location_lon = data['data'][photo]['location']['longitude']
 						location_lat = data['data'][photo]['location']['latitude']
 						photo_id = data['data'][photo]['id']
 						user_id = data['data'][photo]['user']['id']
-						f.write(created + ';' + user_id + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + '\n')
+						f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + '\n')
 					if(len(data['data']) == 20):
 						t2_rec = data['data'][19]['created_time']
 					else:
