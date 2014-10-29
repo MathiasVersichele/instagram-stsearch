@@ -1,3 +1,4 @@
+import sys
 import argparse
 import math
 import time
@@ -8,6 +9,9 @@ import urllib2
 import json
 import simplekml
 from polycircles import polycircles
+
+reload(sys)
+sys.setdefaultencoding("utf-8")
 
 helpstring = 'usage: instagram-stsearch.py -h(elp) -t <access-token> -b <bbox min-lon,max-lon,min-lat,max-lat> -s <start timestamp in human readable format> -e <end timestamp in human readable format> -o <outputfile> [-r <radius of search circles, default 5000m>]'
 
@@ -73,7 +77,7 @@ ok = raw_input("proceed ? enter y(es) or n(o):   ")
 print ok
 if ok in ('y', 'Y'):
 	f = open(args.output, "a")
-	f.write('created;type;link;user_id;photo_id;lon;lat\n')
+	f.write('created;type;link;user_id;user_name;photo_id;lon;lat;tags\n')
 	for i in range(0, len(t_max_list)):
 		t1 = t_min_list[i]
 		t2 = t_max_list[i]
@@ -102,7 +106,10 @@ if ok in ('y', 'Y'):
 						location_lat = data['data'][photo]['location']['latitude']
 						photo_id = data['data'][photo]['id']
 						user_id = data['data'][photo]['user']['id']
-						f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + '\n')
+						user_name = data['data'][photo]['user']['username']
+						tags = data['data'][photo]['tags']
+						tags = [x.encode('utf-8') for x in tags]
+						f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + user_name + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + ';' + ','.join(tags) + '\n')
 					if(len(data['data']) == 20):
 						t2_rec = data['data'][19]['created_time']
 					else:
