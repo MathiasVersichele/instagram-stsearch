@@ -1,3 +1,4 @@
+import argparse
 import math
 import time
 import datetime
@@ -6,18 +7,19 @@ import numpy as np
 import urllib2
 import json
 
-## user params
-ig_access_token = "1542801014.eb99df3.19a156f1345f400eb35d1f4b26d90345"
+helpstring = 'usage: instagram-stsearch.py -h(elp) -t <access-token> -b <bbox min-lon,max-lon,min-lat,max-lat> -s <start timestamp in human readable format> -e <end timestamp in human readable format> -o <outputfile> [-r <radius of search circles, default 5000m>]'
 
-lon_min = 2.5
-lon_max = 3.4
-lat_min = 50.70
-lat_max = 51.35
-r_meters = 5000
-t_min = "01/01/2014 00:00:00 +0000" # or anything else dateutil.parser can handle
-t_max = "10/28/2014 00:00:00 +0000"
-output = "instagram_data.csv"
-##
+argparser = argparse.ArgumentParser()
+argparser.add_argument("ig_access_token", help="instagram access-token", type=str)
+argparser.add_argument("lon_min", help="bounding box minimum longitude", type=float)
+argparser.add_argument("lon_max", help="bounding box maximum longitude", type=float)
+argparser.add_argument("lat_min", help="bounding box minimum latitude", type=float)
+argparser.add_argument("lat_max", help="bounding box maximum latitude", type=float)
+argparser.add_argument("t_min", help="minimum timestamp", type=str)
+argparser.add_argument("t_max", help="maximum timestamp", type=str)
+argparser.add_argument("output", help="output location", type=str)
+argparser.add_argument("-r", help="search radius (default 5000m)", type=int, default=5000)
+args = argparser.parse_args()	
 
 ## static vars
 ig_max_time_span = 5
@@ -42,8 +44,8 @@ def change_in_longitude(latitude, kms):
 
 
 
-t_min = parser.parse(t_min)
-t_max = parser.parse(t_max)
+t_min = parser.parse(args.t_min)
+t_max = parser.parse(args.t_max)
 days = (t_max - t_min).days
 print days
 
@@ -53,8 +55,8 @@ t_min_list = [t_min if x<t_min else x for x in t_min_list]
 print t_max_list
 print t_min_list
 
-lon_list = np.arange(lon_min, lon_max, change_in_longitude((lat_min + lat_max)/2, (r_meters/1000)*circle_packing))
-lat_list = np.arange(lat_min, lat_max, change_in_latitude((r_meters/1000)*circle_packing))
+lon_list = np.arange(args.lon_min, args.lon_max, change_in_longitude((args.lat_min + args.lat_max)/2, (args.r/1000)*circle_packing))
+lat_list = np.arange(args.lat_min, args.lat_max, change_in_latitude((args.r/1000)*circle_packing))
 print lon_list
 print lat_list
 
@@ -80,7 +82,7 @@ if ok in ('y', 'Y'):
 				t2_rec = t2_unix
 				while True:
 					print t1, t2, lon, lat
-					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + ig_access_token + '&distance=' + str(r_meters) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
+					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + ig_access_token + '&distance=' + str(r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
 					print url
 					response = urllib2.urlopen(url)
 					data = json.load(response)
