@@ -71,8 +71,10 @@ if args.k:
 			pol.style.polystyle.color = simplekml.Color.changealphaint(200, simplekml.Color.green)
 	kml.save("instagram-stsearch.kml")
 
-print len(lon_list)*len(lat_list)*len(t_max_list), "calls in total without counting recursive calls"
+total_calls = len(lon_list)*len(lat_list)*len(t_max_list)
+print total_calls, "calls in total without counting recursive calls"
 
+call = 1
 f = open(args.output, "a")
 f.write('created;type;link;user_id;user_name;photo_id;lon;lat;tags\n')
 for i in range(0, len(t_max_list)):
@@ -90,26 +92,33 @@ for i in range(0, len(t_max_list)):
 			t2_rec = t2_unix
 			while True:
 				print t1, t2, lon, lat
-				url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + args.ig_access_token + '&distance=' + str(args.r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
-				print url
-				response = urllib2.urlopen(url)
-				data = json.load(response)
-				print len(data['data'])
-				for photo in range(0, len(data['data'])):
-					created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
-					type = data['data'][photo]['type']
-					link = data['data'][photo]['link']
-					location_lon = data['data'][photo]['location']['longitude']
-					location_lat = data['data'][photo]['location']['latitude']
-					photo_id = data['data'][photo]['id']
-					user_id = data['data'][photo]['user']['id']
-					user_name = data['data'][photo]['user']['username']
-					tags = data['data'][photo]['tags']
-					tags = [x.encode('utf-8') for x in tags]
-					f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + user_name + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + ';' + ','.join(tags) + '\n')
-				if(len(data['data']) == 20):
-					t2_rec = data['data'][19]['created_time']
-				else:
-					break
+				try:
+					print 'call', call, '(', round((float(call)/float(total_calls)) * 100, 3), '%)'
+					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + args.ig_access_token + '&distance=' + str(args.r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
+					print url
+					response = urllib2.urlopen(url, None, 5)
+					data = json.load(response)
+					print len(data['data'])
+					for photo in range(0, len(data['data'])):
+						created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
+						type = data['data'][photo]['type']
+						link = data['data'][photo]['link']
+						location_lon = data['data'][photo]['location']['longitude']
+						location_lat = data['data'][photo]['location']['latitude']
+						photo_id = data['data'][photo]['id']
+						user_id = data['data'][photo]['user']['id']
+						user_name = data['data'][photo]['user']['username']
+						tags = data['data'][photo]['tags']
+						tags = [x.encode('utf-8') for x in tags]
+						f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + user_name + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + ';' + ','.join(tags) + '\n')
+					call = call + 1
+					if(len(data['data']) == 20):
+						t2_rec = data['data'][19]['created_time']
+					else:
+						break
+				except Exception as e:
+					print e
+					print 'waiting 1 minute...'
+					time.sleep(60)
 f.close()
 print "done !"
