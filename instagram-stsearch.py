@@ -7,8 +7,6 @@ from dateutil import parser
 import numpy as np
 import urllib2
 import json
-import simplekml
-from polycircles import polycircles
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -30,7 +28,7 @@ args = argparser.parse_args()
 
 ## static vars
 ig_max_time_span = 5
-circle_packing = 1.4
+circle_packing = 1.3
 ##
 
 ## slightly adapted from http://www.johndcook.com/blog/2009/04/27/converting-miles-to-degrees-longitude-or-latitude/
@@ -63,6 +61,8 @@ lon_list = np.arange(args.lon_min, args.lon_max, change_in_longitude((args.lat_m
 lat_list = np.arange(args.lat_min, args.lat_max, change_in_latitude((args.r/1000)*circle_packing))
 
 if args.k:
+	import simplekml
+	from polycircles import polycircles
 	kml = simplekml.Kml()
 	for lon in lon_list:
 		for lat in lat_list:
@@ -73,46 +73,43 @@ if args.k:
 
 print len(lon_list)*len(lat_list)*len(t_max_list), "calls in total without counting recursive calls"
 
-ok = raw_input("proceed ? enter y(es) or n(o):   ")
-print ok
-if ok in ('y', 'Y'):
-	f = open(args.output, "a")
-	f.write('created;type;link;user_id;user_name;photo_id;lon;lat;tags\n')
-	for i in range(0, len(t_max_list)):
-		t1 = t_min_list[i]
-		t2 = t_max_list[i]
-		t1_unix = time.mktime(t1.timetuple())
-		t2_unix = time.mktime(t2.timetuple())
-		#print t1, t2
-		#print t1_unix, t2_unix
-		for j in range(0,len(lon_list)):
-			lon = lon_list[j]
-			for k in range(0,len(lat_list)):
-				lat = lat_list[k]
-				#print lon, lat
-				t2_rec = t2_unix
-				while True:
-					print t1, t2, lon, lat
-					url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + args.ig_access_token + '&distance=' + str(args.r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
-					print url
-					response = urllib2.urlopen(url)
-					data = json.load(response)
-					print len(data['data'])
-					for photo in range(0, len(data['data'])):
-						created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
-						type = data['data'][photo]['type']
-						link = data['data'][photo]['link']
-						location_lon = data['data'][photo]['location']['longitude']
-						location_lat = data['data'][photo]['location']['latitude']
-						photo_id = data['data'][photo]['id']
-						user_id = data['data'][photo]['user']['id']
-						user_name = data['data'][photo]['user']['username']
-						tags = data['data'][photo]['tags']
-						tags = [x.encode('utf-8') for x in tags]
-						f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + user_name + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + ';' + ','.join(tags) + '\n')
-					if(len(data['data']) == 20):
-						t2_rec = data['data'][19]['created_time']
-					else:
-						break
-	f.close()
+f = open(args.output, "a")
+f.write('created;type;link;user_id;user_name;photo_id;lon;lat;tags\n')
+for i in range(0, len(t_max_list)):
+	t1 = t_min_list[i]
+	t2 = t_max_list[i]
+	t1_unix = time.mktime(t1.timetuple())
+	t2_unix = time.mktime(t2.timetuple())
+	#print t1, t2
+	#print t1_unix, t2_unix
+	for j in range(0,len(lon_list)):
+		lon = lon_list[j]
+		for k in range(0,len(lat_list)):
+			lat = lat_list[k]
+			#print lon, lat
+			t2_rec = t2_unix
+			while True:
+				print t1, t2, lon, lat
+				url = 'https://api.instagram.com/v1/media/search?lat=' + str(lat) + '&lng=' + str(lon) + '&access_token=' + args.ig_access_token + '&distance=' + str(args.r) + '&min_timestamp=' + str(t1_unix) + '&max_timestamp=' + str(t2_rec)
+				print url
+				response = urllib2.urlopen(url)
+				data = json.load(response)
+				print len(data['data'])
+				for photo in range(0, len(data['data'])):
+					created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
+					type = data['data'][photo]['type']
+					link = data['data'][photo]['link']
+					location_lon = data['data'][photo]['location']['longitude']
+					location_lat = data['data'][photo]['location']['latitude']
+					photo_id = data['data'][photo]['id']
+					user_id = data['data'][photo]['user']['id']
+					user_name = data['data'][photo]['user']['username']
+					tags = data['data'][photo]['tags']
+					tags = [x.encode('utf-8') for x in tags]
+					f.write(created + ';' + type + ';' + link + ';' + user_id + ';' + user_name + ';' + photo_id + ';' + str(location_lon) + ';' + str(location_lat) + ';' + ','.join(tags) + '\n')
+				if(len(data['data']) == 20):
+					t2_rec = data['data'][19]['created_time']
+				else:
+					break
+f.close()
 print "done !"
