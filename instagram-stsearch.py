@@ -80,7 +80,7 @@ print total_calls, "calls in total without counting recursive calls"
 downloaded_photo_ids = Set([])
 call = 1
 f = open(args.output, "a")
-f.write('created|type|link|user_id|user_name|photo_id|lon|lat|tags\n')
+f.write('id|type|user_id|user_name|link|timestamp|lon|lat|caption|tags\n')
 for i in range(0, len(t_max_list)):
 	t1 = t_min_list[i]
 	t2 = t_max_list[i]
@@ -104,31 +104,31 @@ for i in range(0, len(t_max_list)):
 					print '  ', len(data['data'])
 					new_photos = 0
 					for photo in range(0, len(data['data'])):
-						created = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
+						timestamp = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
 						type = data['data'][photo]['type']
 						link = data['data'][photo]['link']
 						location_lon = data['data'][photo]['location']['longitude']
 						location_lat = data['data'][photo]['location']['latitude']
-						photo_id = data['data'][photo]['id']
+						id = data['data'][photo]['id']
 						user_id = data['data'][photo]['user']['id']
 						user_name = data['data'][photo]['user']['username']
+						caption = data['data'][photo]['caption']
+						if caption:
+							caption = caption['text']
+						else:
+							caption = ''
 						tags = data['data'][photo]['tags']
 						tags = [x.encode('utf-8') for x in tags]
-						if not photo_id in downloaded_photo_ids:
-							print '    ', created, '  ', photo_id
-							f.write(created + '|' + type + '|' + link + '|' + user_id + '|' + user_name + '|' + photo_id + '|' + str(location_lon) + '|' + str(location_lat) + '|' + ','.join(tags) + '\n')
-							downloaded_photo_ids.add(photo_id)
+						if not id in downloaded_photo_ids:
+							print '    ', timestamp, '  ', id
+							f.write(id + '|' + type + '|' + user_id + '|' + user_name + '|' + link + '|' + timestamp + '|' + str(location_lon) + '|' + str(location_lat) + '|' + caption + '|' + ','.join(tags) + '\n')
+							downloaded_photo_ids.add(id)
 							new_photos = new_photos + 1
 						else:
-							print '    ', created, '  ', photo_id, '*'
-					#if(len(data['data']) == 20):
+							print '    ', timestamp, '  ', id, '*'
 					if new_photos == 0:
 						break
-					#elif len(data['data']) == 1 and last_photo_id == photo_id:
-					#	break
-					#elif len(data['data']) > 0:
 					else:
-						#t2_rec = data['data'][19]['created_time']
 						t2_rec = int(data['data'][len(data['data'])-1]['created_time']) - 1
 					
 				except Exception as e:
