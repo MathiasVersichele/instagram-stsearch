@@ -12,8 +12,6 @@ from sets import Set
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
-helpstring = 'usage: instagram-stsearch.py -h(elp) -t <access-token> -b <bbox min-lon,max-lon,min-lat,max-lat> -s <start timestamp in human readable format> -e <end timestamp in human readable format> -o <outputfile> [-r <radius of search circles, default 5000m>]'
-
 argparser = argparse.ArgumentParser()
 argparser.add_argument("ig_access_token", help="instagram access-token", type=str)
 argparser.add_argument("lon_min", help="bounding box minimum longitude", type=float)
@@ -22,9 +20,10 @@ argparser.add_argument("lat_min", help="bounding box minimum latitude", type=flo
 argparser.add_argument("lat_max", help="bounding box maximum latitude", type=float)
 argparser.add_argument("t_min", help="minimum timestamp", type=str)
 argparser.add_argument("t_max", help="maximum timestamp", type=str)
-argparser.add_argument("output", help="output location", type=str)
-argparser.add_argument("-r", help="search radius (default 5000m)", type=int, default=4900)
+argparser.add_argument("output", help="location of output file", type=str)
+argparser.add_argument("-r", help="search radius (default 4900m, using 5000m as specified by the API led to some photos being missed)", type=int, default=4900)
 argparser.add_argument("-k", help="show search circles in specified kml file", action="store_true")
+argparser.add_argument("-a", help="also retrieve all photos outside of the bbox of users within the result set", action="store_true")
 args = argparser.parse_args()	
 
 ## static vars
