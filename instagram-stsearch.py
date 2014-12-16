@@ -115,7 +115,7 @@ for i in range(0, len(t_max_list)):
 						user_name = data['data'][photo]['user']['username']
 						caption = data['data'][photo]['caption']
 						if caption:
-							caption = caption['text']
+							caption = caption['text'].replace('\n', '')
 						else:
 							caption = ''
 						tags = data['data'][photo]['tags']
@@ -153,7 +153,7 @@ if args.a:
 			data = json.load(response)
 			print '  ', len(data)
 			for photo in range(0, len(data['data'])):
-				# There are basically three scenarios:
+				# There are basically four scenarios:
 				# 1. location = null -> no location so ignore
 				# 2. location contains longitude and latitude -> use those values
 				# 3. location contains location_id -> fetch longitude and latitude from separate url call; longitude and latitude are not null -> use those values
@@ -179,7 +179,7 @@ if args.a:
 					user_name = data['data'][photo]['user']['username']
 					caption = data['data'][photo]['caption']
 					if caption:
-						caption = caption['text']
+						caption = caption['text'].replace('\n', '')
 					else:
 						caption = ''
 					tags = data['data'][photo]['tags']
