@@ -78,6 +78,7 @@ total_calls = len(lon_list)*len(lat_list)*len(t_max_list)
 print total_calls, "calls in total without counting recursive calls"
 
 downloaded_photo_ids = Set([])
+user_ids = Set([])
 call = 1
 f = open(args.output, "a")
 f.write('id|type|user_id|user_name|link|timestamp|lon|lat|caption|tags\n')
@@ -123,6 +124,7 @@ for i in range(0, len(t_max_list)):
 							print '    ', timestamp, '  ', id
 							f.write(id + '|' + type + '|' + user_id + '|' + user_name + '|' + link + '|' + timestamp + '|' + str(location_lon) + '|' + str(location_lat) + '|' + caption + '|' + ','.join(tags) + '\n')
 							downloaded_photo_ids.add(id)
+							user_ids.add(user_id)
 							new_photos = new_photos + 1
 						else:
 							print '    ', timestamp, '  ', id, '*'
@@ -136,5 +138,61 @@ for i in range(0, len(t_max_list)):
 					print 'waiting 1 minute...'
 					time.sleep(60)
 			call = call + 1
+
+if args.a:
+	print 'Downloading all photos of users in result set...'
+	call = 0
+	for user_id in user_ids:
+		call = call + 1
+		print user_id, '(', call, ' of ', len(user_ids), ' (', round(float(call) / float(len(user_ids)) * 100, 3), '%)'
+		next_url = ''
+		url = 'https://api.instagram.com/v1/users/' + user_id + '/media/recent/?access_token=' + args.ig_access_token
+		while True:
+			print '  ', url
+			response = urllib2.urlopen(url, None, 5)
+			data = json.load(response)
+			print '  ', len(data)
+			for photo in range(0, len(data['data'])):
+				# There are basically three scenarios:
+				# 1. location = null -> no location so ignore
+				# 2. location contains longitude and latitude -> use those values
+				# 3. location contains location_id -> fetch longitude and latitude from separate url call; longitude and latitude are not null -> use those values
+				# 4. location contains location_id -> fetch longitude and latitude from separate url call; longitude and latitude are null -> no exact location so ignore
+				if data['data'][photo]['location'] != None:
+					timestamp = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
+					type = data['data'][photo]['type']
+					link = data['data'][photo]['link']
+					if data['data'][photo]['location'].get('longitude'):
+						location_lon = data['data'][photo]['location']['longitude']
+						location_lat = data['data'][photo]['location']['latitude']
+					else:
+						response2 = urllib2.urlopen('https://api.instagram.com/v1/locations/' + str(data['data'][photo]['location']['id']) + '?access_token=' + args.ig_access_token, None, 5)
+						data2 = json.load(response2)
+						if data2['data']['longitude'] != None:
+							location_lon = data2['data']['longitude']
+							location_lat = data2['data']['latitude']
+						else:
+							# location through location_id does not contain longitude or latitudes so move on to next photo
+							continue
+					id = data['data'][photo]['id']
+					user_id = data['data'][photo]['user']['id']
+					user_name = data['data'][photo]['user']['username']
+					caption = data['data'][photo]['caption']
+					if caption:
+						caption = caption['text']
+					else:
+						caption = ''
+					tags = data['data'][photo]['tags']
+					tags = [x.encode('utf-8') for x in tags]
+					if not id in downloaded_photo_ids:
+						print '    ', timestamp, '  ', id
+						f.write(id + '|' + type + '|' + user_id + '|' + user_name + '|' + link + '|' + timestamp + '|' + str(location_lon) + '|' + str(location_lat) + '|' + caption + '|' + ','.join(tags) + '\n')
+					else:
+						print '    ', timestamp, '  ', id, '*'
+			
+			if len(data['pagination']) > 0:
+				url = data['pagination']['next_url']
+			else:
+				break
 f.close()
 print "done !"
