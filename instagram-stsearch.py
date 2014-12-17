@@ -144,7 +144,7 @@ if args.a:
 	call = 0
 	for user_id in user_ids:
 		call = call + 1
-		print user_id, '(', call, ' of ', len(user_ids), ' (', round(float(call) / float(len(user_ids)) * 100, 3), '%)'
+		print user_id, '(', call, ' of ', len(user_ids), ', ', round(float(call) / float(len(user_ids)) * 100, 3), '%)'
 		next_url = ''
 		url = 'https://api.instagram.com/v1/users/' + user_id + '/media/recent/?access_token=' + args.ig_access_token
 		while True:
