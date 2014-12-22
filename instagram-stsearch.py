@@ -21,13 +21,17 @@ def parseResponse(data):
 			timestamp = datetime.datetime.fromtimestamp(float(data[photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
 			type = data[photo]['type']
 			link = data[photo]['link']
+			location_name = ''
 			if data[photo]['location'].get('longitude'):
+				if data[photo]['location'].get('name'):
+					location_name = data[photo]['location']['name']
 				location_lon = data[photo]['location']['longitude']
 				location_lat = data[photo]['location']['latitude']
 			else:
 				response2 = urllib2.urlopen('https://api.instagram.com/v1/locations/' + str(data[photo]['location']['id']) + '?access_token=' + args.ig_access_token, None, 5)
 				data2 = json.load(response2)
 				if data2['data']['longitude'] != None:
+					location_name = data2['data']['name']
 					location_lon = data2['data']['longitude']
 					location_lat = data2['data']['latitude']
 				else:
@@ -44,7 +48,7 @@ def parseResponse(data):
 			tags = data[photo]['tags']
 			tags = [x.encode('utf-8') for x in tags]
 			if not id in downloaded_photo_ids:
-				f.write(id + '|' + type + '|' + user_id + '|' + user_name + '|' + link + '|' + timestamp + '|' + str(location_lon) + '|' + str(location_lat) + '|' + caption + '|' + ','.join(tags) + '\n')
+				f.write(id + '|' + type + '|' + user_id + '|' + user_name + '|' + link + '|' + timestamp + '|' + str(location_lon) + '|' + str(location_lat) + '|' + location_name + '|' + caption + '|' + ','.join(tags) + '\n')
 				downloaded_photo_ids.add(id)
 				user_ids.add(user_id)
 			else:
@@ -124,7 +128,7 @@ downloaded_photo_ids = Set([])
 user_ids = Set([])
 call = 1
 f = open(args.output, "a")
-f.write('id|type|user_id|user_name|link|timestamp|lon|lat|caption|tags\n')
+f.write('id|type|user_id|user_name|link|timestamp|lon|lat|location_name|caption|tags\n')
 for i in range(0, len(t_max_list)):
 	t1 = t_min_list[i]
 	t2 = t_max_list[i]
