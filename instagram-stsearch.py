@@ -1,4 +1,5 @@
 import sys
+import traceback
 import argparse
 import math
 import time
@@ -105,6 +106,8 @@ for i in range(0, len(t_max_list)):
 					print '  ', len(data['data'])
 					new_photos = 0
 					for photo in range(0, len(data['data'])):
+						if data['data'][photo]['location'] == None:
+							continue
 						timestamp = datetime.datetime.fromtimestamp(float(data['data'][photo]['created_time'])).strftime("%Y-%m-%d %H:%M:%S")
 						type = data['data'][photo]['type']
 						link = data['data'][photo]['link']
@@ -136,6 +139,7 @@ for i in range(0, len(t_max_list)):
 					
 				except Exception as e:
 					print e
+					traceback.print_exc(file=sys.stdout)
 					print 'waiting 1 minute...'
 					time.sleep(60)
 			call = call + 1
@@ -199,6 +203,7 @@ if args.a:
 					break
 		except Exception as e:
 			print e
+			traceback.print_exc(file=sys.stdout)
 			print 'waiting 1 minute...'
 			time.sleep(60)
 f.close()
